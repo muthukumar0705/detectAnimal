@@ -1,0 +1,84 @@
+
+#define echoPin 8 // attach pin D2 Arduino to pin Echo of HC-SR04
+#define trigPin 9 //attach pin D3 Arduino to pin Trig of HC-SR04
+#define echoPin1 6 
+#define trigPin1 7
+#define echoPin2 10
+#define trigPin2 11
+#define enA 3
+#define in1 4
+#define in2 5
+#define objDis 20
+
+// defines variables
+bool topMotionDetect = false, topMotionDetect1 = false;
+int i = 0;
+
+void setup() {
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
+  pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
+  pinMode(trigPin1, OUTPUT); // Sets the trigPin as an OUTPUT
+  pinMode(echoPin1, INPUT); // Sets the echoPin as an INPUT
+  pinMode(trigPin2, OUTPUT); // Sets the trigPin as an OUTPUT
+  pinMode(echoPin2, INPUT); // Sets the echoPin as an INPUT
+  pinMode(enA, OUTPUT);
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  analogWrite(enA, 255);
+  Serial.begin(9600); // // Serial Communication is starting with 9600 of baudrate speed
+  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
+  Serial.println("with Arduino UNO R3");
+}
+
+int getDistance(int ePin, int tPin) {
+  digitalWrite(tPin, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
+  digitalWrite(tPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(tPin, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  long duration1 = pulseIn(ePin, HIGH);
+  // Calculating the distance
+  return duration1 * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+  // Displays the distance on the Serial Monitor
+}
+
+void loop() {
+  int ultra1 = getDistance(echoPin, trigPin);
+  int ultra2 = getDistance(echoPin1, trigPin1);
+  int ultraCenter = getDistance(echoPin2, trigPin2); 
+  if(ultra1 > 0 && ultra2 > 0) {
+    if(ultra1 < objDis && !topMotionDetect && !topMotionDetect1){
+      topMotionDetect = true;
+    } else if(ultra2 < objDis && topMotionDetect && !topMotionDetect1) {
+      topMotionDetect = false;
+    } else if(ultra2 < objDis && !topMotionDetect1 && !topMotionDetect){
+      topMotionDetect1 = true;
+    } else if(ultra1 < objDis && topMotionDetect1 && !topMotionDetect) {
+      topMotionDetect1 = false;
+    }
+  }
+  
+  if(i>50){
+    i=0;
+    topMotionDetect = false;
+    topMotionDetect1 = false;
+  } else if(topMotionDetect || topMotionDetect1) {
+    i++;
+  }
+   
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+     
+  if(ultraCenter < objDis && !topMotionDetect && !topMotionDetect1){
+    Serial.println("Run Bump");
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, HIGH);
+    i=0;
+    topMotionDetect = false;
+    topMotionDetect1 = false;
+    delay(2000);
+  }
+  delay(50);
+}
